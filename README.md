@@ -2,6 +2,7 @@
 
 Trabalho A3 da unidade curricular **Garantia da Qualidade de Software**, Universidade São Judas Tadeu, Prof. Leandro Negreiros, 2026/2.
 
+
 ## Objetivo
 
 Avaliar a qualidade de um sistema web real, atuando como equipe de QA. O trabalho inclui:
