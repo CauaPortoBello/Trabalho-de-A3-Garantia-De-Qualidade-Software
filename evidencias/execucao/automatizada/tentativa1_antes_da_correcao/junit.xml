@@ -1,0 +1,939 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="0" tests="8" time="75.942" timestamp="2026-11-25T17:21:30.516925-03:00" hostname="Ninj4"><testcase classname="tests.test_ct01_contato_valido" name="test_ct01_contato_com_campos_validos_exibe_confirmacao" time="7.065"><failure message="selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element is not clickable at point (667, 3023)&#10;  (Session info: chrome=158.0.8127.38); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception&#10;Stacktrace:&#10;Symbols not available. Dumping unresolved backtrace:&#10;&#09;(No symbol) [0x7ff6803f0f05]&#10;&#09;(No symbol) [0x7ff6802f1db0]&#10;&#09;(No symbol) [0x7ff680173433]&#10;[+21 more lines; full report in element text]">driver = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session="9bf16c8929ff4eb17a6ed88e489289e2")&gt;
+base_url = 'https://automationintesting.online'
+
+    @pytest.mark.contato
+    def test_ct01_contato_com_campos_validos_exibe_confirmacao(driver, base_url):
+        pagina = ContactPage(driver, base_url)
+        pagina.abrir("/")
+    
+&gt;       pagina.enviar(
+            nome="Ana Exemplo",
+            email="ana.exemplo@exemplo.com",
+            telefone="11987654321",
+            assunto="Duvida sobre reserva",
+            mensagem="Gostaria de saber se a pousada aceita animais.",
+        )
+
+tests\test_ct01_contato_valido.py:16: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+pages\contact_page.py:27: in enviar
+    self.clicar(self.ENVIAR)
+pages\base_page.py:25: in clicar
+    self.wait.until(EC.element_to_be_clickable(locator)).click()
+.venv\Lib\site-packages\selenium\webdriver\remote\webelement.py:117: in click
+    self._execute(Command.CLICK_ELEMENT)
+.venv\Lib\site-packages\selenium\webdriver\remote\webelement.py:532: in _execute
+    return self._parent.execute(command, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\selenium\webdriver\remote\webdriver.py:569: in execute
+    self.error_handler.check_response(response)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x000001D9151509B0&gt;
+response = {'status': 400, 'value': '{"value":{"error":"element click intercepted","message":"element click intercepted: Element ...802fc494]\\n\\t(No symbol) [0x7ff6802e509c]\\n\\t(No symbol) [0x7ffb4f57dda7]\\n\\t(No symbol) [0x7ffb4ffd9c6c]\\n"}}'}
+
+    def check_response(self, response: dict[str, Any]) -&gt; None:
+        """Check that a JSON response from the WebDriver does not have an error.
+    
+        Args:
+            response: The JSON response from the WebDriver server as a dictionary
+                object.
+    
+        Raises:
+            WebDriverException: If the response contains an error message.
+        """
+        status = response.get("status", None)
+        if not status or status == ErrorCode.SUCCESS:
+            return
+        value = None
+        message = response.get("message", "")
+        screen: str = response.get("screen", "")
+        stacktrace = None
+        if isinstance(status, int):
+            value_json = response.get("value", None)
+            if value_json and isinstance(value_json, str):
+                try:
+                    value = json.loads(value_json)
+                    if isinstance(value, dict):
+                        if len(value) == 1:
+                            value = value["value"]
+                        status = value.get("error", None)
+                        if not status:
+                            status = value.get("status", ErrorCode.UNKNOWN_ERROR)
+                            message = value.get("value") or value.get("message")
+                            if not isinstance(message, str):
+                                value = message
+                                message = message.get("message") if isinstance(message, dict) else None
+                        else:
+                            message = value.get("message", None)
+                except ValueError:
+                    pass
+    
+        exception_class: type[WebDriverException]
+        e = ErrorCode()
+        error_codes = [item for item in dir(e) if not item.startswith("__")]
+        for error_code in error_codes:
+            error_info = getattr(ErrorCode, error_code)
+            if isinstance(error_info, list) and status in error_info:
+                exception_class = getattr(ExceptionMapping, error_code, WebDriverException)
+                break
+        else:
+            exception_class = WebDriverException
+    
+        if not value:
+            value = response.get("value")
+        if isinstance(value, str):
+            raise exception_class(value)
+        if isinstance(value, dict):
+            if message == "" and "message" in value:
+                message = value["message"]
+    
+            screen = None  # type: ignore[assignment]
+            if "screen" in value:
+                screen = value["screen"]
+    
+            stacktrace = None
+            st_value = value.get("stackTrace") or value.get("stacktrace")
+            if st_value:
+                if isinstance(st_value, str):
+                    stacktrace = st_value.split("\n")
+                else:
+                    stacktrace = []
+                    try:
+                        for frame in st_value:
+                            line = frame.get("lineNumber", "")
+                            file = frame.get("fileName", "&lt;anonymous&gt;")
+                            if line:
+                                file = f"{file}:{line}"
+                            meth = frame.get("methodName", "&lt;anonymous&gt;")
+                            if "className" in frame:
+                                meth = f"{frame['className']}.{meth}"
+                            msg = "    at %s (%s)"
+                            msg = msg % (meth, file)
+                            stacktrace.append(msg)
+                    except TypeError:
+                        pass
+        if exception_class == UnexpectedAlertPresentException:
+            alert_text = None
+            if isinstance(value, dict):
+                if "data" in value:
+                    alert_text = value["data"].get("text")
+                elif "alert" in value:
+                    alert_text = value["alert"].get("text")
+            raise exception_class(message, screen, stacktrace, alert_text)
+&gt;       raise exception_class(message, screen, stacktrace)
+E       selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element is not clickable at point (667, 3023)
+E         (Session info: chrome=158.0.8127.38); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception
+E       Stacktrace:
+E       Symbols not available. Dumping unresolved backtrace:
+E       	(No symbol) [0x7ff6803f0f05]
+E       	(No symbol) [0x7ff6802f1db0]
+E       	(No symbol) [0x7ff680173433]
+E       	(No symbol) [0x7ff6809bbf22]
+E       	(No symbol) [0x7ff6809ba53a]
+E       	(No symbol) [0x7ff6809b842f]
+E       	(No symbol) [0x7ff6809b7bc0]
+E       	(No symbol) [0x7ff6809ac842]
+E       	(No symbol) [0x7ff6809c902a]
+E       	(No symbol) [0x7ff6809ac289]
+E       	(No symbol) [0x7ff6809ac220]
+E       	(No symbol) [0x7ff6801a5b01]
+E       	(No symbol) [0x7ff68018bea1]
+E       	(No symbol) [0x7ff68018d1d3]
+E       	(No symbol) [0x7ff680890f4f]
+E       	(No symbol) [0x7ff6808b7678]
+E       	(No symbol) [0x7ff6808aaf68]
+E       	(No symbol) [0x7ff68050e62e]
+E       	(No symbol) [0x7ff6803016f3]
+E       	(No symbol) [0x7ff6802fc304]
+E       	(No symbol) [0x7ff6802fc494]
+E       	(No symbol) [0x7ff6802e509c]
+E       	(No symbol) [0x7ffb4f57dda7]
+E       	(No symbol) [0x7ffb4ffd9c6c]
+
+.venv\Lib\site-packages\selenium\webdriver\remote\errorhandler.py:234: ElementClickInterceptedException</failure></testcase><testcase classname="tests.test_ct03_telefone_valor_limite" name="test_ct03_telefone_valor_limite[10_abaixo_do_minimo]" time="5.998"><failure message="selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element is not clickable at point (667, 1531)&#10;  (Session info: chrome=158.0.8127.38); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception&#10;Stacktrace:&#10;Symbols not available. Dumping unresolved backtrace:&#10;&#09;(No symbol) [0x7ff6803f0f05]&#10;&#09;(No symbol) [0x7ff6802f1db0]&#10;&#09;(No symbol) [0x7ff680173433]&#10;[+21 more lines; full report in element text]">driver = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session="4a7f6b17a596ce0bd7cf44e10d01c049")&gt;
+base_url = 'https://automationintesting.online', tamanho = 10
+deve_aceitar = False
+
+    @pytest.mark.contato
+    @pytest.mark.parametrize(
+        "tamanho, deve_aceitar",
+        [(10, False), (11, True), (21, True), (22, False)],
+        ids=["10_abaixo_do_minimo", "11_minimo", "21_maximo", "22_acima_do_maximo"],
+    )
+    def test_ct03_telefone_valor_limite(driver, base_url, tamanho, deve_aceitar):
+        pagina = ContactPage(driver, base_url)
+        pagina.abrir("/")
+    
+&gt;       pagina.enviar(
+            nome="Bruno Ficticio",
+            email="bruno.ficticio@exemplo.com",
+            telefone="1" * tamanho,
+            assunto="Teste de valor-limite",
+            mensagem="Mensagem ficticia para teste de valor-limite do telefone.",
+        )
+
+tests\test_ct03_telefone_valor_limite.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+pages\contact_page.py:27: in enviar
+    self.clicar(self.ENVIAR)
+pages\base_page.py:25: in clicar
+    self.wait.until(EC.element_to_be_clickable(locator)).click()
+.venv\Lib\site-packages\selenium\webdriver\remote\webelement.py:117: in click
+    self._execute(Command.CLICK_ELEMENT)
+.venv\Lib\site-packages\selenium\webdriver\remote\webelement.py:532: in _execute
+    return self._parent.execute(command, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\selenium\webdriver\remote\webdriver.py:569: in execute
+    self.error_handler.check_response(response)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x000001D915151A30&gt;
+response = {'status': 400, 'value': '{"value":{"error":"element click intercepted","message":"element click intercepted: Element ...802fc494]\\n\\t(No symbol) [0x7ff6802e509c]\\n\\t(No symbol) [0x7ffb4f57dda7]\\n\\t(No symbol) [0x7ffb4ffd9c6c]\\n"}}'}
+
+    def check_response(self, response: dict[str, Any]) -&gt; None:
+        """Check that a JSON response from the WebDriver does not have an error.
+    
+        Args:
+            response: The JSON response from the WebDriver server as a dictionary
+                object.
+    
+        Raises:
+            WebDriverException: If the response contains an error message.
+        """
+        status = response.get("status", None)
+        if not status or status == ErrorCode.SUCCESS:
+            return
+        value = None
+        message = response.get("message", "")
+        screen: str = response.get("screen", "")
+        stacktrace = None
+        if isinstance(status, int):
+            value_json = response.get("value", None)
+            if value_json and isinstance(value_json, str):
+                try:
+                    value = json.loads(value_json)
+                    if isinstance(value, dict):
+                        if len(value) == 1:
+                            value = value["value"]
+                        status = value.get("error", None)
+                        if not status:
+                            status = value.get("status", ErrorCode.UNKNOWN_ERROR)
+                            message = value.get("value") or value.get("message")
+                            if not isinstance(message, str):
+                                value = message
+                                message = message.get("message") if isinstance(message, dict) else None
+                        else:
+                            message = value.get("message", None)
+                except ValueError:
+                    pass
+    
+        exception_class: type[WebDriverException]
+        e = ErrorCode()
+        error_codes = [item for item in dir(e) if not item.startswith("__")]
+        for error_code in error_codes:
+            error_info = getattr(ErrorCode, error_code)
+            if isinstance(error_info, list) and status in error_info:
+                exception_class = getattr(ExceptionMapping, error_code, WebDriverException)
+                break
+        else:
+            exception_class = WebDriverException
+    
+        if not value:
+            value = response.get("value")
+        if isinstance(value, str):
+            raise exception_class(value)
+        if isinstance(value, dict):
+            if message == "" and "message" in value:
+                message = value["message"]
+    
+            screen = None  # type: ignore[assignment]
+            if "screen" in value:
+                screen = value["screen"]
+    
+            stacktrace = None
+            st_value = value.get("stackTrace") or value.get("stacktrace")
+            if st_value:
+                if isinstance(st_value, str):
+                    stacktrace = st_value.split("\n")
+                else:
+                    stacktrace = []
+                    try:
+                        for frame in st_value:
+                            line = frame.get("lineNumber", "")
+                            file = frame.get("fileName", "&lt;anonymous&gt;")
+                            if line:
+                                file = f"{file}:{line}"
+                            meth = frame.get("methodName", "&lt;anonymous&gt;")
+                            if "className" in frame:
+                                meth = f"{frame['className']}.{meth}"
+                            msg = "    at %s (%s)"
+                            msg = msg % (meth, file)
+                            stacktrace.append(msg)
+                    except TypeError:
+                        pass
+        if exception_class == UnexpectedAlertPresentException:
+            alert_text = None
+            if isinstance(value, dict):
+                if "data" in value:
+                    alert_text = value["data"].get("text")
+                elif "alert" in value:
+                    alert_text = value["alert"].get("text")
+            raise exception_class(message, screen, stacktrace, alert_text)
+&gt;       raise exception_class(message, screen, stacktrace)
+E       selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element is not clickable at point (667, 1531)
+E         (Session info: chrome=158.0.8127.38); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception
+E       Stacktrace:
+E       Symbols not available. Dumping unresolved backtrace:
+E       	(No symbol) [0x7ff6803f0f05]
+E       	(No symbol) [0x7ff6802f1db0]
+E       	(No symbol) [0x7ff680173433]
+E       	(No symbol) [0x7ff6809bbf22]
+E       	(No symbol) [0x7ff6809ba53a]
+E       	(No symbol) [0x7ff6809b842f]
+E       	(No symbol) [0x7ff6809b7bc0]
+E       	(No symbol) [0x7ff6809ac842]
+E       	(No symbol) [0x7ff6809c902a]
+E       	(No symbol) [0x7ff6809ac289]
+E       	(No symbol) [0x7ff6809ac220]
+E       	(No symbol) [0x7ff6801a5b01]
+E       	(No symbol) [0x7ff68018bea1]
+E       	(No symbol) [0x7ff68018d1d3]
+E       	(No symbol) [0x7ff680890f4f]
+E       	(No symbol) [0x7ff6808b7678]
+E       	(No symbol) [0x7ff6808aaf68]
+E       	(No symbol) [0x7ff68050e62e]
+E       	(No symbol) [0x7ff6803016f3]
+E       	(No symbol) [0x7ff6802fc304]
+E       	(No symbol) [0x7ff6802fc494]
+E       	(No symbol) [0x7ff6802e509c]
+E       	(No symbol) [0x7ffb4f57dda7]
+E       	(No symbol) [0x7ffb4ffd9c6c]
+
+.venv\Lib\site-packages\selenium\webdriver\remote\errorhandler.py:234: ElementClickInterceptedException</failure></testcase><testcase classname="tests.test_ct03_telefone_valor_limite" name="test_ct03_telefone_valor_limite[11_minimo]" time="5.817"><failure message="selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element is not clickable at point (667, 1682)&#10;  (Session info: chrome=158.0.8127.38); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception&#10;Stacktrace:&#10;Symbols not available. Dumping unresolved backtrace:&#10;&#09;(No symbol) [0x7ff6803f0f05]&#10;&#09;(No symbol) [0x7ff6802f1db0]&#10;&#09;(No symbol) [0x7ff680173433]&#10;[+21 more lines; full report in element text]">driver = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session="aeba40f701b2f6852815db4fbf1e08bc")&gt;
+base_url = 'https://automationintesting.online', tamanho = 11
+deve_aceitar = True
+
+    @pytest.mark.contato
+    @pytest.mark.parametrize(
+        "tamanho, deve_aceitar",
+        [(10, False), (11, True), (21, True), (22, False)],
+        ids=["10_abaixo_do_minimo", "11_minimo", "21_maximo", "22_acima_do_maximo"],
+    )
+    def test_ct03_telefone_valor_limite(driver, base_url, tamanho, deve_aceitar):
+        pagina = ContactPage(driver, base_url)
+        pagina.abrir("/")
+    
+&gt;       pagina.enviar(
+            nome="Bruno Ficticio",
+            email="bruno.ficticio@exemplo.com",
+            telefone="1" * tamanho,
+            assunto="Teste de valor-limite",
+            mensagem="Mensagem ficticia para teste de valor-limite do telefone.",
+        )
+
+tests\test_ct03_telefone_valor_limite.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+pages\contact_page.py:27: in enviar
+    self.clicar(self.ENVIAR)
+pages\base_page.py:25: in clicar
+    self.wait.until(EC.element_to_be_clickable(locator)).click()
+.venv\Lib\site-packages\selenium\webdriver\remote\webelement.py:117: in click
+    self._execute(Command.CLICK_ELEMENT)
+.venv\Lib\site-packages\selenium\webdriver\remote\webelement.py:532: in _execute
+    return self._parent.execute(command, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\selenium\webdriver\remote\webdriver.py:569: in execute
+    self.error_handler.check_response(response)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x000001D915150AD0&gt;
+response = {'status': 400, 'value': '{"value":{"error":"element click intercepted","message":"element click intercepted: Element ...802fc494]\\n\\t(No symbol) [0x7ff6802e509c]\\n\\t(No symbol) [0x7ffb4f57dda7]\\n\\t(No symbol) [0x7ffb4ffd9c6c]\\n"}}'}
+
+    def check_response(self, response: dict[str, Any]) -&gt; None:
+        """Check that a JSON response from the WebDriver does not have an error.
+    
+        Args:
+            response: The JSON response from the WebDriver server as a dictionary
+                object.
+    
+        Raises:
+            WebDriverException: If the response contains an error message.
+        """
+        status = response.get("status", None)
+        if not status or status == ErrorCode.SUCCESS:
+            return
+        value = None
+        message = response.get("message", "")
+        screen: str = response.get("screen", "")
+        stacktrace = None
+        if isinstance(status, int):
+            value_json = response.get("value", None)
+            if value_json and isinstance(value_json, str):
+                try:
+                    value = json.loads(value_json)
+                    if isinstance(value, dict):
+                        if len(value) == 1:
+                            value = value["value"]
+                        status = value.get("error", None)
+                        if not status:
+                            status = value.get("status", ErrorCode.UNKNOWN_ERROR)
+                            message = value.get("value") or value.get("message")
+                            if not isinstance(message, str):
+                                value = message
+                                message = message.get("message") if isinstance(message, dict) else None
+                        else:
+                            message = value.get("message", None)
+                except ValueError:
+                    pass
+    
+        exception_class: type[WebDriverException]
+        e = ErrorCode()
+        error_codes = [item for item in dir(e) if not item.startswith("__")]
+        for error_code in error_codes:
+            error_info = getattr(ErrorCode, error_code)
+            if isinstance(error_info, list) and status in error_info:
+                exception_class = getattr(ExceptionMapping, error_code, WebDriverException)
+                break
+        else:
+            exception_class = WebDriverException
+    
+        if not value:
+            value = response.get("value")
+        if isinstance(value, str):
+            raise exception_class(value)
+        if isinstance(value, dict):
+            if message == "" and "message" in value:
+                message = value["message"]
+    
+            screen = None  # type: ignore[assignment]
+            if "screen" in value:
+                screen = value["screen"]
+    
+            stacktrace = None
+            st_value = value.get("stackTrace") or value.get("stacktrace")
+            if st_value:
+                if isinstance(st_value, str):
+                    stacktrace = st_value.split("\n")
+                else:
+                    stacktrace = []
+                    try:
+                        for frame in st_value:
+                            line = frame.get("lineNumber", "")
+                            file = frame.get("fileName", "&lt;anonymous&gt;")
+                            if line:
+                                file = f"{file}:{line}"
+                            meth = frame.get("methodName", "&lt;anonymous&gt;")
+                            if "className" in frame:
+                                meth = f"{frame['className']}.{meth}"
+                            msg = "    at %s (%s)"
+                            msg = msg % (meth, file)
+                            stacktrace.append(msg)
+                    except TypeError:
+                        pass
+        if exception_class == UnexpectedAlertPresentException:
+            alert_text = None
+            if isinstance(value, dict):
+                if "data" in value:
+                    alert_text = value["data"].get("text")
+                elif "alert" in value:
+                    alert_text = value["alert"].get("text")
+            raise exception_class(message, screen, stacktrace, alert_text)
+&gt;       raise exception_class(message, screen, stacktrace)
+E       selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element is not clickable at point (667, 1682)
+E         (Session info: chrome=158.0.8127.38); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception
+E       Stacktrace:
+E       Symbols not available. Dumping unresolved backtrace:
+E       	(No symbol) [0x7ff6803f0f05]
+E       	(No symbol) [0x7ff6802f1db0]
+E       	(No symbol) [0x7ff680173433]
+E       	(No symbol) [0x7ff6809bbf22]
+E       	(No symbol) [0x7ff6809ba53a]
+E       	(No symbol) [0x7ff6809b842f]
+E       	(No symbol) [0x7ff6809b7bc0]
+E       	(No symbol) [0x7ff6809ac842]
+E       	(No symbol) [0x7ff6809c902a]
+E       	(No symbol) [0x7ff6809ac289]
+E       	(No symbol) [0x7ff6809ac220]
+E       	(No symbol) [0x7ff6801a5b01]
+E       	(No symbol) [0x7ff68018bea1]
+E       	(No symbol) [0x7ff68018d1d3]
+E       	(No symbol) [0x7ff680890f4f]
+E       	(No symbol) [0x7ff6808b7678]
+E       	(No symbol) [0x7ff6808aaf68]
+E       	(No symbol) [0x7ff68050e62e]
+E       	(No symbol) [0x7ff6803016f3]
+E       	(No symbol) [0x7ff6802fc304]
+E       	(No symbol) [0x7ff6802fc494]
+E       	(No symbol) [0x7ff6802e509c]
+E       	(No symbol) [0x7ffb4f57dda7]
+E       	(No symbol) [0x7ffb4ffd9c6c]
+
+.venv\Lib\site-packages\selenium\webdriver\remote\errorhandler.py:234: ElementClickInterceptedException</failure></testcase><testcase classname="tests.test_ct03_telefone_valor_limite" name="test_ct03_telefone_valor_limite[21_maximo]" time="5.840"><failure message="selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element is not clickable at point (667, 1586)&#10;  (Session info: chrome=158.0.8127.38); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception&#10;Stacktrace:&#10;Symbols not available. Dumping unresolved backtrace:&#10;&#09;(No symbol) [0x7ff6803f0f05]&#10;&#09;(No symbol) [0x7ff6802f1db0]&#10;&#09;(No symbol) [0x7ff680173433]&#10;[+21 more lines; full report in element text]">driver = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session="c192222d70358f502e35022a96b4953e")&gt;
+base_url = 'https://automationintesting.online', tamanho = 21
+deve_aceitar = True
+
+    @pytest.mark.contato
+    @pytest.mark.parametrize(
+        "tamanho, deve_aceitar",
+        [(10, False), (11, True), (21, True), (22, False)],
+        ids=["10_abaixo_do_minimo", "11_minimo", "21_maximo", "22_acima_do_maximo"],
+    )
+    def test_ct03_telefone_valor_limite(driver, base_url, tamanho, deve_aceitar):
+        pagina = ContactPage(driver, base_url)
+        pagina.abrir("/")
+    
+&gt;       pagina.enviar(
+            nome="Bruno Ficticio",
+            email="bruno.ficticio@exemplo.com",
+            telefone="1" * tamanho,
+            assunto="Teste de valor-limite",
+            mensagem="Mensagem ficticia para teste de valor-limite do telefone.",
+        )
+
+tests\test_ct03_telefone_valor_limite.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+pages\contact_page.py:27: in enviar
+    self.clicar(self.ENVIAR)
+pages\base_page.py:25: in clicar
+    self.wait.until(EC.element_to_be_clickable(locator)).click()
+.venv\Lib\site-packages\selenium\webdriver\remote\webelement.py:117: in click
+    self._execute(Command.CLICK_ELEMENT)
+.venv\Lib\site-packages\selenium\webdriver\remote\webelement.py:532: in _execute
+    return self._parent.execute(command, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\selenium\webdriver\remote\webdriver.py:569: in execute
+    self.error_handler.check_response(response)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x000001D915153FE0&gt;
+response = {'status': 400, 'value': '{"value":{"error":"element click intercepted","message":"element click intercepted: Element ...802fc494]\\n\\t(No symbol) [0x7ff6802e509c]\\n\\t(No symbol) [0x7ffb4f57dda7]\\n\\t(No symbol) [0x7ffb4ffd9c6c]\\n"}}'}
+
+    def check_response(self, response: dict[str, Any]) -&gt; None:
+        """Check that a JSON response from the WebDriver does not have an error.
+    
+        Args:
+            response: The JSON response from the WebDriver server as a dictionary
+                object.
+    
+        Raises:
+            WebDriverException: If the response contains an error message.
+        """
+        status = response.get("status", None)
+        if not status or status == ErrorCode.SUCCESS:
+            return
+        value = None
+        message = response.get("message", "")
+        screen: str = response.get("screen", "")
+        stacktrace = None
+        if isinstance(status, int):
+            value_json = response.get("value", None)
+            if value_json and isinstance(value_json, str):
+                try:
+                    value = json.loads(value_json)
+                    if isinstance(value, dict):
+                        if len(value) == 1:
+                            value = value["value"]
+                        status = value.get("error", None)
+                        if not status:
+                            status = value.get("status", ErrorCode.UNKNOWN_ERROR)
+                            message = value.get("value") or value.get("message")
+                            if not isinstance(message, str):
+                                value = message
+                                message = message.get("message") if isinstance(message, dict) else None
+                        else:
+                            message = value.get("message", None)
+                except ValueError:
+                    pass
+    
+        exception_class: type[WebDriverException]
+        e = ErrorCode()
+        error_codes = [item for item in dir(e) if not item.startswith("__")]
+        for error_code in error_codes:
+            error_info = getattr(ErrorCode, error_code)
+            if isinstance(error_info, list) and status in error_info:
+                exception_class = getattr(ExceptionMapping, error_code, WebDriverException)
+                break
+        else:
+            exception_class = WebDriverException
+    
+        if not value:
+            value = response.get("value")
+        if isinstance(value, str):
+            raise exception_class(value)
+        if isinstance(value, dict):
+            if message == "" and "message" in value:
+                message = value["message"]
+    
+            screen = None  # type: ignore[assignment]
+            if "screen" in value:
+                screen = value["screen"]
+    
+            stacktrace = None
+            st_value = value.get("stackTrace") or value.get("stacktrace")
+            if st_value:
+                if isinstance(st_value, str):
+                    stacktrace = st_value.split("\n")
+                else:
+                    stacktrace = []
+                    try:
+                        for frame in st_value:
+                            line = frame.get("lineNumber", "")
+                            file = frame.get("fileName", "&lt;anonymous&gt;")
+                            if line:
+                                file = f"{file}:{line}"
+                            meth = frame.get("methodName", "&lt;anonymous&gt;")
+                            if "className" in frame:
+                                meth = f"{frame['className']}.{meth}"
+                            msg = "    at %s (%s)"
+                            msg = msg % (meth, file)
+                            stacktrace.append(msg)
+                    except TypeError:
+                        pass
+        if exception_class == UnexpectedAlertPresentException:
+            alert_text = None
+            if isinstance(value, dict):
+                if "data" in value:
+                    alert_text = value["data"].get("text")
+                elif "alert" in value:
+                    alert_text = value["alert"].get("text")
+            raise exception_class(message, screen, stacktrace, alert_text)
+&gt;       raise exception_class(message, screen, stacktrace)
+E       selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element is not clickable at point (667, 1586)
+E         (Session info: chrome=158.0.8127.38); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception
+E       Stacktrace:
+E       Symbols not available. Dumping unresolved backtrace:
+E       	(No symbol) [0x7ff6803f0f05]
+E       	(No symbol) [0x7ff6802f1db0]
+E       	(No symbol) [0x7ff680173433]
+E       	(No symbol) [0x7ff6809bbf22]
+E       	(No symbol) [0x7ff6809ba53a]
+E       	(No symbol) [0x7ff6809b842f]
+E       	(No symbol) [0x7ff6809b7bc0]
+E       	(No symbol) [0x7ff6809ac842]
+E       	(No symbol) [0x7ff6809c902a]
+E       	(No symbol) [0x7ff6809ac289]
+E       	(No symbol) [0x7ff6809ac220]
+E       	(No symbol) [0x7ff6801a5b01]
+E       	(No symbol) [0x7ff68018bea1]
+E       	(No symbol) [0x7ff68018d1d3]
+E       	(No symbol) [0x7ff680890f4f]
+E       	(No symbol) [0x7ff6808b7678]
+E       	(No symbol) [0x7ff6808aaf68]
+E       	(No symbol) [0x7ff68050e62e]
+E       	(No symbol) [0x7ff6803016f3]
+E       	(No symbol) [0x7ff6802fc304]
+E       	(No symbol) [0x7ff6802fc494]
+E       	(No symbol) [0x7ff6802e509c]
+E       	(No symbol) [0x7ffb4f57dda7]
+E       	(No symbol) [0x7ffb4ffd9c6c]
+
+.venv\Lib\site-packages\selenium\webdriver\remote\errorhandler.py:234: ElementClickInterceptedException</failure></testcase><testcase classname="tests.test_ct03_telefone_valor_limite" name="test_ct03_telefone_valor_limite[22_acima_do_maximo]" time="5.893"><failure message="selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element is not clickable at point (667, 1730)&#10;  (Session info: chrome=158.0.8127.38); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception&#10;Stacktrace:&#10;Symbols not available. Dumping unresolved backtrace:&#10;&#09;(No symbol) [0x7ff6803f0f05]&#10;&#09;(No symbol) [0x7ff6802f1db0]&#10;&#09;(No symbol) [0x7ff680173433]&#10;[+21 more lines; full report in element text]">driver = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session="ae75b9b572d59ed8b3e3cb59f7cf5c30")&gt;
+base_url = 'https://automationintesting.online', tamanho = 22
+deve_aceitar = False
+
+    @pytest.mark.contato
+    @pytest.mark.parametrize(
+        "tamanho, deve_aceitar",
+        [(10, False), (11, True), (21, True), (22, False)],
+        ids=["10_abaixo_do_minimo", "11_minimo", "21_maximo", "22_acima_do_maximo"],
+    )
+    def test_ct03_telefone_valor_limite(driver, base_url, tamanho, deve_aceitar):
+        pagina = ContactPage(driver, base_url)
+        pagina.abrir("/")
+    
+&gt;       pagina.enviar(
+            nome="Bruno Ficticio",
+            email="bruno.ficticio@exemplo.com",
+            telefone="1" * tamanho,
+            assunto="Teste de valor-limite",
+            mensagem="Mensagem ficticia para teste de valor-limite do telefone.",
+        )
+
+tests\test_ct03_telefone_valor_limite.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+pages\contact_page.py:27: in enviar
+    self.clicar(self.ENVIAR)
+pages\base_page.py:25: in clicar
+    self.wait.until(EC.element_to_be_clickable(locator)).click()
+.venv\Lib\site-packages\selenium\webdriver\remote\webelement.py:117: in click
+    self._execute(Command.CLICK_ELEMENT)
+.venv\Lib\site-packages\selenium\webdriver\remote\webelement.py:532: in _execute
+    return self._parent.execute(command, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\selenium\webdriver\remote\webdriver.py:569: in execute
+    self.error_handler.check_response(response)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x000001D91551D0D0&gt;
+response = {'status': 400, 'value': '{"value":{"error":"element click intercepted","message":"element click intercepted: Element ...802fc494]\\n\\t(No symbol) [0x7ff6802e509c]\\n\\t(No symbol) [0x7ffb4f57dda7]\\n\\t(No symbol) [0x7ffb4ffd9c6c]\\n"}}'}
+
+    def check_response(self, response: dict[str, Any]) -&gt; None:
+        """Check that a JSON response from the WebDriver does not have an error.
+    
+        Args:
+            response: The JSON response from the WebDriver server as a dictionary
+                object.
+    
+        Raises:
+            WebDriverException: If the response contains an error message.
+        """
+        status = response.get("status", None)
+        if not status or status == ErrorCode.SUCCESS:
+            return
+        value = None
+        message = response.get("message", "")
+        screen: str = response.get("screen", "")
+        stacktrace = None
+        if isinstance(status, int):
+            value_json = response.get("value", None)
+            if value_json and isinstance(value_json, str):
+                try:
+                    value = json.loads(value_json)
+                    if isinstance(value, dict):
+                        if len(value) == 1:
+                            value = value["value"]
+                        status = value.get("error", None)
+                        if not status:
+                            status = value.get("status", ErrorCode.UNKNOWN_ERROR)
+                            message = value.get("value") or value.get("message")
+                            if not isinstance(message, str):
+                                value = message
+                                message = message.get("message") if isinstance(message, dict) else None
+                        else:
+                            message = value.get("message", None)
+                except ValueError:
+                    pass
+    
+        exception_class: type[WebDriverException]
+        e = ErrorCode()
+        error_codes = [item for item in dir(e) if not item.startswith("__")]
+        for error_code in error_codes:
+            error_info = getattr(ErrorCode, error_code)
+            if isinstance(error_info, list) and status in error_info:
+                exception_class = getattr(ExceptionMapping, error_code, WebDriverException)
+                break
+        else:
+            exception_class = WebDriverException
+    
+        if not value:
+            value = response.get("value")
+        if isinstance(value, str):
+            raise exception_class(value)
+        if isinstance(value, dict):
+            if message == "" and "message" in value:
+                message = value["message"]
+    
+            screen = None  # type: ignore[assignment]
+            if "screen" in value:
+                screen = value["screen"]
+    
+            stacktrace = None
+            st_value = value.get("stackTrace") or value.get("stacktrace")
+            if st_value:
+                if isinstance(st_value, str):
+                    stacktrace = st_value.split("\n")
+                else:
+                    stacktrace = []
+                    try:
+                        for frame in st_value:
+                            line = frame.get("lineNumber", "")
+                            file = frame.get("fileName", "&lt;anonymous&gt;")
+                            if line:
+                                file = f"{file}:{line}"
+                            meth = frame.get("methodName", "&lt;anonymous&gt;")
+                            if "className" in frame:
+                                meth = f"{frame['className']}.{meth}"
+                            msg = "    at %s (%s)"
+                            msg = msg % (meth, file)
+                            stacktrace.append(msg)
+                    except TypeError:
+                        pass
+        if exception_class == UnexpectedAlertPresentException:
+            alert_text = None
+            if isinstance(value, dict):
+                if "data" in value:
+                    alert_text = value["data"].get("text")
+                elif "alert" in value:
+                    alert_text = value["alert"].get("text")
+            raise exception_class(message, screen, stacktrace, alert_text)
+&gt;       raise exception_class(message, screen, stacktrace)
+E       selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element is not clickable at point (667, 1730)
+E         (Session info: chrome=158.0.8127.38); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception
+E       Stacktrace:
+E       Symbols not available. Dumping unresolved backtrace:
+E       	(No symbol) [0x7ff6803f0f05]
+E       	(No symbol) [0x7ff6802f1db0]
+E       	(No symbol) [0x7ff680173433]
+E       	(No symbol) [0x7ff6809bbf22]
+E       	(No symbol) [0x7ff6809ba53a]
+E       	(No symbol) [0x7ff6809b842f]
+E       	(No symbol) [0x7ff6809b7bc0]
+E       	(No symbol) [0x7ff6809ac842]
+E       	(No symbol) [0x7ff6809c902a]
+E       	(No symbol) [0x7ff6809ac289]
+E       	(No symbol) [0x7ff6809ac220]
+E       	(No symbol) [0x7ff6801a5b01]
+E       	(No symbol) [0x7ff68018bea1]
+E       	(No symbol) [0x7ff68018d1d3]
+E       	(No symbol) [0x7ff680890f4f]
+E       	(No symbol) [0x7ff6808b7678]
+E       	(No symbol) [0x7ff6808aaf68]
+E       	(No symbol) [0x7ff68050e62e]
+E       	(No symbol) [0x7ff6803016f3]
+E       	(No symbol) [0x7ff6802fc304]
+E       	(No symbol) [0x7ff6802fc494]
+E       	(No symbol) [0x7ff6802e509c]
+E       	(No symbol) [0x7ffb4f57dda7]
+E       	(No symbol) [0x7ffb4ffd9c6c]
+
+.venv\Lib\site-packages\selenium\webdriver\remote\errorhandler.py:234: ElementClickInterceptedException</failure></testcase><testcase classname="tests.test_ct05_reserva_datas_invertidas" name="test_ct05_reserva_com_saida_antes_da_entrada_e_recusada" time="5.217"><failure message="selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element is not clickable at point (397, 839)&#10;  (Session info: chrome=158.0.8127.38); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception&#10;Stacktrace:&#10;Symbols not available. Dumping unresolved backtrace:&#10;&#09;(No symbol) [0x7ff6803f0f05]&#10;&#09;(No symbol) [0x7ff6802f1db0]&#10;&#09;(No symbol) [0x7ff680173433]&#10;[+21 more lines; full report in element text]">driver = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session="4cd719bae50c45e331b5c0acf9f30891")&gt;
+base_url = 'https://automationintesting.online'
+
+    @pytest.mark.reserva
+    def test_ct05_reserva_com_saida_antes_da_entrada_e_recusada(driver, base_url):
+        entrada = date.today() + timedelta(days=30)
+        saida = entrada - timedelta(days=2)
+        entrada_txt, saida_txt = entrada.strftime("%d/%m/%Y"), saida.strftime("%d/%m/%Y")
+    
+        pagina = BookingPage(driver, base_url)
+&gt;       pagina.buscar(entrada_txt, saida_txt)
+
+tests\test_ct05_reserva_datas_invertidas.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+pages\booking_page.py:42: in buscar
+    self._preencher_data(campos[0], entrada)
+pages\booking_page.py:23: in _preencher_data
+    campo.click()
+.venv\Lib\site-packages\selenium\webdriver\remote\webelement.py:117: in click
+    self._execute(Command.CLICK_ELEMENT)
+.venv\Lib\site-packages\selenium\webdriver\remote\webelement.py:532: in _execute
+    return self._parent.execute(command, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\selenium\webdriver\remote\webdriver.py:569: in execute
+    self.error_handler.check_response(response)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x000001D91551CFE0&gt;
+response = {'status': 400, 'value': '{"value":{"error":"element click intercepted","message":"element click intercepted: Element ...802fc494]\\n\\t(No symbol) [0x7ff6802e509c]\\n\\t(No symbol) [0x7ffb4f57dda7]\\n\\t(No symbol) [0x7ffb4ffd9c6c]\\n"}}'}
+
+    def check_response(self, response: dict[str, Any]) -&gt; None:
+        """Check that a JSON response from the WebDriver does not have an error.
+    
+        Args:
+            response: The JSON response from the WebDriver server as a dictionary
+                object.
+    
+        Raises:
+            WebDriverException: If the response contains an error message.
+        """
+        status = response.get("status", None)
+        if not status or status == ErrorCode.SUCCESS:
+            return
+        value = None
+        message = response.get("message", "")
+        screen: str = response.get("screen", "")
+        stacktrace = None
+        if isinstance(status, int):
+            value_json = response.get("value", None)
+            if value_json and isinstance(value_json, str):
+                try:
+                    value = json.loads(value_json)
+                    if isinstance(value, dict):
+                        if len(value) == 1:
+                            value = value["value"]
+                        status = value.get("error", None)
+                        if not status:
+                            status = value.get("status", ErrorCode.UNKNOWN_ERROR)
+                            message = value.get("value") or value.get("message")
+                            if not isinstance(message, str):
+                                value = message
+                                message = message.get("message") if isinstance(message, dict) else None
+                        else:
+                            message = value.get("message", None)
+                except ValueError:
+                    pass
+    
+        exception_class: type[WebDriverException]
+        e = ErrorCode()
+        error_codes = [item for item in dir(e) if not item.startswith("__")]
+        for error_code in error_codes:
+            error_info = getattr(ErrorCode, error_code)
+            if isinstance(error_info, list) and status in error_info:
+                exception_class = getattr(ExceptionMapping, error_code, WebDriverException)
+                break
+        else:
+            exception_class = WebDriverException
+    
+        if not value:
+            value = response.get("value")
+        if isinstance(value, str):
+            raise exception_class(value)
+        if isinstance(value, dict):
+            if message == "" and "message" in value:
+                message = value["message"]
+    
+            screen = None  # type: ignore[assignment]
+            if "screen" in value:
+                screen = value["screen"]
+    
+            stacktrace = None
+            st_value = value.get("stackTrace") or value.get("stacktrace")
+            if st_value:
+                if isinstance(st_value, str):
+                    stacktrace = st_value.split("\n")
+                else:
+                    stacktrace = []
+                    try:
+                        for frame in st_value:
+                            line = frame.get("lineNumber", "")
+                            file = frame.get("fileName", "&lt;anonymous&gt;")
+                            if line:
+                                file = f"{file}:{line}"
+                            meth = frame.get("methodName", "&lt;anonymous&gt;")
+                            if "className" in frame:
+                                meth = f"{frame['className']}.{meth}"
+                            msg = "    at %s (%s)"
+                            msg = msg % (meth, file)
+                            stacktrace.append(msg)
+                    except TypeError:
+                        pass
+        if exception_class == UnexpectedAlertPresentException:
+            alert_text = None
+            if isinstance(value, dict):
+                if "data" in value:
+                    alert_text = value["data"].get("text")
+                elif "alert" in value:
+                    alert_text = value["alert"].get("text")
+            raise exception_class(message, screen, stacktrace, alert_text)
+&gt;       raise exception_class(message, screen, stacktrace)
+E       selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element is not clickable at point (397, 839)
+E         (Session info: chrome=158.0.8127.38); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception
+E       Stacktrace:
+E       Symbols not available. Dumping unresolved backtrace:
+E       	(No symbol) [0x7ff6803f0f05]
+E       	(No symbol) [0x7ff6802f1db0]
+E       	(No symbol) [0x7ff680173433]
+E       	(No symbol) [0x7ff6809bbf22]
+E       	(No symbol) [0x7ff6809ba53a]
+E       	(No symbol) [0x7ff6809b842f]
+E       	(No symbol) [0x7ff6809b7bc0]
+E       	(No symbol) [0x7ff6809ac842]
+E       	(No symbol) [0x7ff6809c902a]
+E       	(No symbol) [0x7ff6809ac289]
+E       	(No symbol) [0x7ff6809ac220]
+E       	(No symbol) [0x7ff6801a5b01]
+E       	(No symbol) [0x7ff68018bea1]
+E       	(No symbol) [0x7ff68018d1d3]
+E       	(No symbol) [0x7ff680890f4f]
+E       	(No symbol) [0x7ff6808b7678]
+E       	(No symbol) [0x7ff6808aaf68]
+E       	(No symbol) [0x7ff68050e62e]
+E       	(No symbol) [0x7ff6803016f3]
+E       	(No symbol) [0x7ff6802fc304]
+E       	(No symbol) [0x7ff6802fc494]
+E       	(No symbol) [0x7ff6802e509c]
+E       	(No symbol) [0x7ffb4f57dda7]
+E       	(No symbol) [0x7ffb4ffd9c6c]
+
+.venv\Lib\site-packages\selenium\webdriver\remote\errorhandler.py:234: ElementClickInterceptedException</failure></testcase><testcase classname="tests.test_ct07_login_senha_incorreta" name="test_ct07_login_com_senha_incorreta_e_recusado" time="7.559" /><testcase classname="tests.test_ct08_admin_cria_quarto" name="test_ct08_admin_cria_quarto_e_ele_aparece_na_lista" time="14.244" /></testsuite></testsuites>

@@ -1,0 +1,24 @@
+Reverificacao HTTP dos defeitos (somente requisicoes GET, sem cookies/autenticacao)
+Data/hora: 25/11/2026 17:30:20 (horario local, -03:00)
+Ferramenta: curl 8.19.0
+
+GET /api/room/1 -> HTTP 500
+  corpo (inicio): Internal Server Error
+GET /api/room/2 -> HTTP 500
+  corpo (inicio): Internal Server Error
+GET /api/room/3 -> HTTP 500
+  corpo (inicio): Internal Server Error
+GET /api/message -> HTTP 200
+  corpo (inicio): {"messages":[{"id":1,"name":"James Dean","read":false,"subject":"Booking enquiry"}]}
+GET /api/booking -> HTTP 401
+  corpo (inicio): {"error":"Authentication required"}
+GET /api/report -> HTTP 401
+  corpo (inicio): {"error":"Authentication required"}
+GET /api/room -> HTTP 200
+  corpo (inicio): {"rooms":[{"accessible":true,"description":"Aenean porttitor mauris sit amet lacinia molestie. In posuere accumsan aliquet. Maecenas sit amet nisl massa. Interdum et malesuada fames ac ante.","features":["TV","WiFi","Saf
+
+Nomes de quartos em GET /api/room:
+"roomName":"101"
+"roomName":"102"
+"roomName":"103"
+"roomName":"QA1125172913"

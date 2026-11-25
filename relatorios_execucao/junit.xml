@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="8" time="76.582" timestamp="2026-11-25T17:28:13.461439-03:00" hostname="Ninj4"><testcase classname="tests.test_ct01_contato_valido" name="test_ct01_contato_com_campos_validos_exibe_confirmacao" time="5.640" /><testcase classname="tests.test_ct03_telefone_valor_limite" name="test_ct03_telefone_valor_limite[10_abaixo_do_minimo]" time="5.217" /><testcase classname="tests.test_ct03_telefone_valor_limite" name="test_ct03_telefone_valor_limite[11_minimo]" time="5.153" /><testcase classname="tests.test_ct03_telefone_valor_limite" name="test_ct03_telefone_valor_limite[21_maximo]" time="5.410" /><testcase classname="tests.test_ct03_telefone_valor_limite" name="test_ct03_telefone_valor_limite[22_acima_do_maximo]" time="5.081" /><testcase classname="tests.test_ct05_reserva_datas_invertidas" name="test_ct05_reserva_com_saida_antes_da_entrada_e_recusada" time="9.781"><failure message="AssertionError: O sistema não exibiu aviso para saída (23/12/2026) anterior à entrada (25/12/2026) e continuou oferecendo 3 link(s) 'Book now'.&#10;assert None is not None">driver = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session="170e0577970036cb3f1ee81c8aedfa12")&gt;
+base_url = 'https://automationintesting.online'
+
+    @pytest.mark.reserva
+    def test_ct05_reserva_com_saida_antes_da_entrada_e_recusada(driver, base_url):
+        entrada = date.today() + timedelta(days=30)
+        saida = entrada - timedelta(days=2)
+        entrada_txt, saida_txt = entrada.strftime("%d/%m/%Y"), saida.strftime("%d/%m/%Y")
+    
+        pagina = BookingPage(driver, base_url)
+        pagina.buscar(entrada_txt, saida_txt)
+    
+        # Pré-condição do próprio teste: as datas inválidas precisam estar nos campos
+        assert pagina.datas_exibidas() == [entrada_txt, saida_txt], (
+            f"Não foi possível preencher as datas (problema de automação, não defeito): {pagina.datas_exibidas()}"
+        )
+    
+        aviso = pagina.aviso_validacao()
+&gt;       assert aviso is not None, (
+            f"O sistema não exibiu aviso para saída ({saida_txt}) anterior à entrada ({entrada_txt}) "
+            f"e continuou oferecendo {pagina.quantidade_links_reserva()} link(s) 'Book now'."
+        )
+E       AssertionError: O sistema não exibiu aviso para saída (23/12/2026) anterior à entrada (25/12/2026) e continuou oferecendo 3 link(s) 'Book now'.
+E       assert None is not None
+
+tests\test_ct05_reserva_datas_invertidas.py:32: AssertionError</failure></testcase><testcase classname="tests.test_ct07_login_senha_incorreta" name="test_ct07_login_com_senha_incorreta_e_recusado" time="7.370" /><testcase classname="tests.test_ct08_admin_cria_quarto" name="test_ct08_admin_cria_quarto_e_ele_aparece_na_lista" time="14.493" /></testsuite></testsuites>

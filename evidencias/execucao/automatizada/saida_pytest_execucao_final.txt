@@ -1,0 +1,79 @@
+Execucao final da suite automatizada - A3 Grupo 4 - Restful Booker Platform
+Data/hora: 25/11/2026 17:28:08,52
+Sistema: Windows 11 | Comando: python -m pytest
+
+Python 3.12.4
+selenium 4.54.0
+pytest 9.2.0
+pytest_html 4.2.0
+Conectividade com https://automationintesting.online: HTTP 200 (resposta normal)
+Chrome 158.0.8127.38 iniciado com sucesso
+AMBIENTE OK
+
+============================= test session starts =============================
+platform win32 -- Python 3.12.4, pytest-9.2.0, pluggy-1.7.0 -- C:\Users\toppl\Downloads\A3-Garantia-Qualidade-Software\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+metadata: {'Python': '3.12.4', 'Platform': 'Windows-11-10.0.26300-SP0', 'Packages': {'pytest': '9.2.0', 'pluggy': '1.7.0'}, 'Plugins': {'html': '4.2.0', 'metadata': '3.1.1'}, 'JAVA_HOME': 'C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot\\'}
+rootdir: C:\Users\toppl\Downloads\A3-Garantia-Qualidade-Software
+configfile: pytest.ini
+testpaths: tests
+plugins: html-4.2.0, metadata-3.1.1
+collecting ... collected 8 items
+
+tests/test_ct01_contato_valido.py::test_ct01_contato_com_campos_validos_exibe_confirmacao PASSED [ 12%]
+tests/test_ct03_telefone_valor_limite.py::test_ct03_telefone_valor_limite[10_abaixo_do_minimo] PASSED [ 25%]
+tests/test_ct03_telefone_valor_limite.py::test_ct03_telefone_valor_limite[11_minimo] PASSED [ 37%]
+tests/test_ct03_telefone_valor_limite.py::test_ct03_telefone_valor_limite[21_maximo] PASSED [ 50%]
+tests/test_ct03_telefone_valor_limite.py::test_ct03_telefone_valor_limite[22_acima_do_maximo] PASSED [ 62%]
+tests/test_ct05_reserva_datas_invertidas.py::test_ct05_reserva_com_saida_antes_da_entrada_e_recusada FAILED [ 75%]
+tests/test_ct07_login_senha_incorreta.py::test_ct07_login_com_senha_incorreta_e_recusado PASSED [ 87%]
+tests/test_ct08_admin_cria_quarto.py::test_ct08_admin_cria_quarto_e_ele_aparece_na_lista PASSED [100%]
+
+================================== FAILURES ===================================
+___________ test_ct05_reserva_com_saida_antes_da_entrada_e_recusada ___________
+
+driver = <selenium.webdriver.chrome.webdriver.WebDriver (session="170e0577970036cb3f1ee81c8aedfa12")>
+base_url = 'https://automationintesting.online'
+
+    @pytest.mark.reserva
+    def test_ct05_reserva_com_saida_antes_da_entrada_e_recusada(driver, base_url):
+        entrada = date.today() + timedelta(days=30)
+        saida = entrada - timedelta(days=2)
+        entrada_txt, saida_txt = entrada.strftime("%d/%m/%Y"), saida.strftime("%d/%m/%Y")
+    
+        pagina = BookingPage(driver, base_url)
+        pagina.buscar(entrada_txt, saida_txt)
+    
+        # Pré-condição do próprio teste: as datas inválidas precisam estar nos campos
+        assert pagina.datas_exibidas() == [entrada_txt, saida_txt], (
+            f"Não foi possível preencher as datas (problema de automação, não defeito): {pagina.datas_exibidas()}"
+        )
+    
+        aviso = pagina.aviso_validacao()
+>       assert aviso is not None, (
+            f"O sistema não exibiu aviso para saída ({saida_txt}) anterior à entrada ({entrada_txt}) "
+            f"e continuou oferecendo {pagina.quantidade_links_reserva()} link(s) 'Book now'."
+        )
+E       AssertionError: O sistema não exibiu aviso para saída (23/12/2026) anterior à entrada (25/12/2026) e continuou oferecendo 3 link(s) 'Book now'.
+E       assert None is not None
+
+tests\test_ct05_reserva_datas_invertidas.py:32: AssertionError
+============================== warnings summary ===============================
+tests/test_ct08_admin_cria_quarto.py::test_ct08_admin_cria_quarto_e_ele_aparece_na_lista
+  C:\Users\toppl\Downloads\A3-Garantia-Qualidade-Software\tests\test_ct08_admin_cria_quarto.py:32: UserWarning: Limpeza: o quarto QA1125172913 não pôde ser excluído pela interface (ver DEF01, sintoma B).
+    warnings.warn(f"Limpeza: o quarto {numero} não pôde ser excluído pela interface (ver DEF01, sintoma B).")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=================================== PASSES ====================================
+- generated xml file: C:\Users\toppl\Downloads\A3-Garantia-Qualidade-Software\relatorios_execucao\junit.xml -
+- Generated html report: file:///C:/Users/toppl/Downloads/A3-Garantia-Qualidade-Software/relatorios_execucao/relatorio_pytest.html -
+=========================== short test summary info ===========================
+PASSED tests/test_ct01_contato_valido.py::test_ct01_contato_com_campos_validos_exibe_confirmacao
+PASSED tests/test_ct03_telefone_valor_limite.py::test_ct03_telefone_valor_limite[10_abaixo_do_minimo]
+PASSED tests/test_ct03_telefone_valor_limite.py::test_ct03_telefone_valor_limite[11_minimo]
+PASSED tests/test_ct03_telefone_valor_limite.py::test_ct03_telefone_valor_limite[21_maximo]
+PASSED tests/test_ct03_telefone_valor_limite.py::test_ct03_telefone_valor_limite[22_acima_do_maximo]
+PASSED tests/test_ct07_login_senha_incorreta.py::test_ct07_login_com_senha_incorreta_e_recusado
+PASSED tests/test_ct08_admin_cria_quarto.py::test_ct08_admin_cria_quarto_e_ele_aparece_na_lista
+FAILED tests/test_ct05_reserva_datas_invertidas.py::test_ct05_reserva_com_saida_antes_da_entrada_e_recusada
+============== 1 failed, 7 passed, 1 warning in 76.59s (0:01:16) ==============
